@@ -165,6 +165,28 @@ app.get('/api/jobs/:id', (req, res) => {
   res.json({ success: true, job });
 });
 
+// ===== GET /api/poll/:name — HTTP polling endpoint (Receiver extension) =====
+app.get('/api/poll/:name', (req, res) => {
+  const target = req.params.name;
+  const jobs = db.prepare(
+    `SELECT * FROM jobs WHERE target=? AND status='pending' ORDER BY createdAt LIMIT 10`
+  ).all(target);
+
+  if (jobs.length > 0) {
+    const now = Date.now();
+    db.prepare(
+      `UPDATE jobs SET status='assigned', assignedAt=? WHERE id IN (${jobs.map(() => '?').join(',')})`
+    ).run(now, ...jobs.map(j => j.id));
+  }
+
+  res.json({ success: true, items: jobs.map(j => ({
+    id:       j.id,
+    accountNo:j.accountNo,
+    bankName: j.bankName,
+    sentBy:   j.sentBy
+  }))});
+});
+
 // ===== GET /api/status =====
 app.get('/api/status', (_req, res) => {
   const users = db.prepare(`SELECT COUNT(DISTINCT sentBy) as count FROM jobs`).get();
