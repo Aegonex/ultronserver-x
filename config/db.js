@@ -1,0 +1,49 @@
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const db = new Database(path.join(__dirname, '..', 'data.db'));
+db.pragma('journal_mode = WAL');
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS jobs (
+    id            INTEGER PRIMARY KEY,
+    accountNo     TEXT NOT NULL,
+    bankName      TEXT NOT NULL,
+    sentBy        TEXT NOT NULL,
+    target        TEXT NOT NULL,
+    status        TEXT DEFAULT 'pending',
+    recipientName TEXT,
+    errorMessage  TEXT,
+    resultRead    INTEGER DEFAULT 0,
+    assignedAt    INTEGER DEFAULT 0,
+    createdAt     INTEGER NOT NULL,
+    doneAt        INTEGER DEFAULT 0
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS bank_configs (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    name     TEXT NOT NULL,
+    digits   TEXT NOT NULL,
+    keywords TEXT NOT NULL
+  )
+`);
+
+if (db.prepare('SELECT COUNT(*) as n FROM bank_configs').get().n === 0) {
+  const ins = db.prepare('INSERT INTO bank_configs (name, digits, keywords) VALUES (?,?,?)');
+  [
+    ['กสิกรไทย',        '[10]',    '["kbank","k bank","kasikorn","กสิกร"]'],
+    ['กรุงเทพ',          '[10]',    '["bbl","bangkok bank","กรุงเทพ"]'],
+    ['กรุงไทย',          '[10]',    '["ktb","krungthai","กรุงไทย","กรุงไท"]'],
+    ['ทหารไทยธนชาต',    '[10]',    '["ttb","ทหารไทย","ธนชาต","tmb"]'],
+    ['ไทยพาณิชย์',      '[10]',    '["scb","siam commercial","พาณิชย์"]'],
+    ['กรุงศรีอยุธยา',   '[10]',    '["bay","krungsri","กรุงศรี","อยุธยา"]'],
+    ['ออมสิน',           '[12,15]', '["gsb","government savings","ออมสิน"]'],
+    ['ธ.ก.ส.',           '[12]',    '["baac","ธกส","เกษตร"]'],
+    ['เกียรตินาคินภัทร', '[10,14]', '["kkp","kiatnakin","เกียรตินาคิน"]'],
+  ].forEach(d => ins.run(...d));
+  console.log('✅ Seeded default bank configs');
+}
+
+module.exports = db;
