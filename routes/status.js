@@ -10,7 +10,7 @@ router.get('/status', (_req, res) => {
 
 // GET /api/data — Dashboard data
 router.get('/data', (_req, res) => {
-  const jobs   = db.prepare(`SELECT * FROM jobs ORDER BY id DESC`).all();
+  const jobs   = db.prepare(`SELECT * FROM jobs ORDER BY id DESC LIMIT 200`).all();
   const online = [...sseClients.keys()];
   res.json({ jobs, online });
 });

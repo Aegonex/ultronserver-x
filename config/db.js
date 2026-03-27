@@ -3,6 +3,10 @@ const path = require('path');
 
 const db = new Database(path.join(__dirname, '..', 'data.db'));
 db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
+db.pragma('cache_size = -32000');
+db.pragma('temp_store = MEMORY');
+db.pragma('mmap_size = 134217728');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
@@ -19,6 +23,11 @@ db.exec(`
     createdAt     INTEGER NOT NULL,
     doneAt        INTEGER DEFAULT 0
   )
+`);
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_jobs_target_status ON jobs(target, status);
+  CREATE INDEX IF NOT EXISTS idx_jobs_status_assigned ON jobs(status, assignedAt);
 `);
 
 db.exec(`
