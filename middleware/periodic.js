@@ -18,6 +18,14 @@ function startPeriodic() {
         });
     }
   }, 15000);
+
+  setInterval(() => {
+    const oneDayAgo = Date.now() - 86400000;
+    const result = db.prepare(
+      `DELETE FROM jobs WHERE createdAt < ? AND status IN ('done', 'error')`
+    ).run(oneDayAgo);
+    if (result.changes > 0) console.log(`🗑️ Auto-deleted ${result.changes} old jobs`);
+  }, 3600000);
 }
 
 module.exports = { startPeriodic };
